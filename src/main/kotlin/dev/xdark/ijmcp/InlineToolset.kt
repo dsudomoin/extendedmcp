@@ -11,8 +11,6 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.psi.PsiField
-import com.intellij.psi.PsiLocalVariable
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.search.GlobalSearchScope

@@ -11,7 +11,6 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClassOwner
-import com.intellij.psi.PsiMethod
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.refactoring.changeSignature.ChangeSignatureProcessor

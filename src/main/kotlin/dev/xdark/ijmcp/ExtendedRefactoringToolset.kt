@@ -40,4 +40,24 @@ class ExtendedRefactoringToolset : McpToolset {
 
         return "ok"
     }
+
+    @McpTool
+    @McpDescription("""
+        |Optimizes imports across the entire project — removes unused imports and organizes the remaining ones.
+        |This is equivalent to running Code > Optimize Imports on the whole project.
+    """)
+    suspend fun optimize_all_imports(): String {
+        val project = currentCoroutineContext().project
+
+        val finished = CompletableDeferred<Unit>()
+        val processor = OptimizeImportsProcessor(project)
+        processor.setPostRunnable { finished.complete(Unit) }
+
+        withContext(Dispatchers.EDT) {
+            processor.run()
+        }
+        finished.await()
+
+        return "ok"
+    }
 }

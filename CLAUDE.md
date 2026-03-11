@@ -21,6 +21,8 @@ src/main/kotlin/dev/xdark/ijmcp/
   GradleToolset.kt             — run_gradle_task
   MoveClassToolset.kt          — move_class
   ChangeSignatureToolset.kt    — change_method_signature
+  SafeDeleteToolset.kt         — safe_delete
+  InlineToolset.kt             — inline_method
 src/main/resources/META-INF/plugin.xml  — Toolset registrations
 mcp-server/                    — Decompiled built-in MCP server sources (reference only)
 ```
@@ -85,3 +87,4 @@ Add to `plugin.xml`:
 - **Kotlin synthetic filtering**: Light classes expose synthetic methods (componentN, copy, getters/setters, serializer, etc.) and classes (Companion, $serializer). Filter them in tools that show structure.
 - **Refactoring processors**: `BaseRefactoringProcessor.run()` manages its own write actions — do NOT wrap in `writeIntentReadAction`. Just call on EDT.
 - **PsiClassOwner**: `(psiFile as? PsiClassOwner)?.classes` works for both Java and Kotlin files.
+- **Windows path relativization**: `relativizeIfPossible` throws `IllegalArgumentException` when paths are on different drives (e.g. JDK on D:\ vs project on F:\). Always wrap in try-catch.
