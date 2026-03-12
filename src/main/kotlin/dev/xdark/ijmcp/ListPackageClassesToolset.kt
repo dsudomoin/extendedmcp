@@ -89,6 +89,7 @@ class ListPackageClassesToolset : McpToolset {
         for (sub in pkg.getSubPackages(scope)) {
             val subName = sub.qualifiedName
             if (subName in subPackages) continue
+            subPackages.add(subName)
             if (recursive) {
                 collectClasses(sub, scope, true, classes, subPackages)
             }

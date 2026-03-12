@@ -26,7 +26,6 @@ import com.intellij.util.DocumentUtil
 import dev.xdark.ijmcp.util.resolveFile
 import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
-import kotlin.time.Duration.Companion.milliseconds
 
 class QuickFixToolset : McpToolset {
 
@@ -82,7 +81,7 @@ class QuickFixToolset : McpToolset {
 
         // Run highlighting passes to get HighlightInfo (same pattern as AnalysisToolset)
         val collectedInfos = mutableListOf<HighlightInfo>()
-        withTimeoutOrNull(timeout.milliseconds) {
+        withTimeoutOrNull(timeout.toLong()) {
             coroutineScope {
                 val psiFile = readAction { PsiManager.getInstance(project).findFile(resolved.virtualFile) }
                     ?: mcpFail("Cannot find PSI file: $filePath")
