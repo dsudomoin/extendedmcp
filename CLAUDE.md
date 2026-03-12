@@ -23,6 +23,9 @@ src/main/kotlin/dev/xdark/ijmcp/
   ChangeSignatureToolset.kt    — change_method_signature
   SafeDeleteToolset.kt         — safe_delete
   InlineToolset.kt             — inline_method
+  ListPackageClassesToolset.kt — list_package_classes
+  AddMemberToolset.kt          — add_method, add_field
+  AddImportToolset.kt          — add_import
 src/main/resources/META-INF/plugin.xml  — Toolset registrations
 mcp-server/                    — Decompiled built-in MCP server sources (reference only)
 ```
@@ -77,7 +80,8 @@ Add to `plugin.xml`:
 - **Resolve file path**: `resolveFile(project, filePath)` (from `util/PsiUtil.kt`) — returns `ResolvedFile(virtualFile, psiFile, document)`
 - **Fail with error**: `mcpFail("message")`
 - **Read PSI**: `readAction { ... }`
-- **Write PSI on EDT**: `withContext(Dispatchers.EDT) { writeIntentReadAction { ... } }`
+- **Write PSI on EDT (refactoring)**: `withContext(Dispatchers.EDT) { writeIntentReadAction { ... } }`
+- **Write PSI on EDT (direct PSI add/remove)**: `withContext(Dispatchers.EDT) { WriteCommandAction.runWriteCommandAction(project) { ... } }`
 - **Reference resolution**: `psiFile.findReferenceAt(offset)` — NOT `element.references` (doesn't work for Kotlin)
 
 ## Gotchas
@@ -86,5 +90,7 @@ Add to `plugin.xml`:
 - **Moving Kotlin files**: Use `MoveFilesOrDirectoriesProcessor` — it triggers Kotlin's `MoveFileHandler` EP which updates the `package` declaration. `MoveClassesOrPackagesProcessor` works with light classes and does NOT update Kotlin package declarations.
 - **Kotlin synthetic filtering**: Light classes expose synthetic methods (componentN, copy, getters/setters, serializer, etc.) and classes (Companion, $serializer). Filter them in tools that show structure.
 - **Refactoring processors**: `BaseRefactoringProcessor.run()` manages its own write actions — do NOT wrap in `writeIntentReadAction`. Just call on EDT.
+- **Direct PSI mutations**: `PsiClass.add()`, `KtClassBody.addBefore()`, etc. require `WriteCommandAction.runWriteCommandAction(project)` — plain `writeIntentReadAction` causes "Must not change PSI outside command" error.
+- **Kotlin plugin dependency**: Bundled plugin `org.jetbrains.kotlin` — requires `<supportsKotlinPluginMode supportsK2="true"/>` in plugin.xml.
 - **PsiClassOwner**: `(psiFile as? PsiClassOwner)?.classes` works for both Java and Kotlin files.
 - **Windows path relativization**: `relativizeIfPossible` throws `IllegalArgumentException` when paths are on different drives (e.g. JDK on D:\ vs project on F:\). Always wrap in try-catch.

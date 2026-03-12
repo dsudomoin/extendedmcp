@@ -8,6 +8,11 @@
     <depends>com.intellij.mcpServer</depends>
     <depends>com.intellij.modules.java</depends>
     <depends>com.intellij.gradle</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true"/>
+    </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
         <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.FindUsagesToolset"/>
@@ -26,5 +31,7 @@
         <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.SafeDeleteToolset"/>
         <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.InlineToolset"/>
         <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ListPackageClassesToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.AddMemberToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.AddImportToolset"/>
     </extensions>
 </idea-plugin>

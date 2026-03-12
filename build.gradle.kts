@@ -20,6 +20,7 @@ dependencies {
         bundledPlugin("com.intellij.mcpServer")
         bundledPlugin("com.intellij.java")
         bundledPlugin("com.intellij.gradle")
+        bundledPlugin("org.jetbrains.kotlin")
     }
     compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 }
