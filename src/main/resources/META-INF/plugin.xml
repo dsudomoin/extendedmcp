@@ -33,5 +33,6 @@
         <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ListPackageClassesToolset"/>
         <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.AddMemberToolset"/>
         <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.AddImportToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.DocumentationToolset"/>
     </extensions>
 </idea-plugin>
