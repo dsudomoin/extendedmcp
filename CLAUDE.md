@@ -26,7 +26,7 @@ src/main/kotlin/dev/xdark/ijmcp/
   ListPackageClassesToolset.kt — list_package_classes
   AddMemberToolset.kt          — add_method, add_field
   AddImportToolset.kt          — add_import
-  DocumentationToolset.kt      — add_documentation
+  DocumentationToolset.kt      — add_documentation, get_documentation
 src/main/resources/META-INF/plugin.xml  — Toolset registrations
 mcp-server/                    — Decompiled built-in MCP server sources (reference only)
 ```
