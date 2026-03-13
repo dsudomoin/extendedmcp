@@ -54,6 +54,10 @@ class DocumentationToolset : McpToolset {
         |To document the class itself, omit memberName.
         |To document a method or field, specify memberName.
         |If the target already has a doc comment, it will be replaced.
+        |
+        |If there are overloaded methods with the same name, the tool will return an error
+        |listing each overload with its index and parameter types. Re-call with memberIndex
+        |to pick the correct overload.
     """
     )
     suspend fun add_documentation(
@@ -61,6 +65,7 @@ class DocumentationToolset : McpToolset {
         @McpDescription("Documentation content as plain markdown (no /// or /** */ delimiters)") documentation: String,
         @McpDescription("Simple name of the target class (optional if file has one class)") className: String = "",
         @McpDescription("Name of the method or field to document (omit to document the class itself)") memberName: String = "",
+        @McpDescription("Index of the overloaded method to document (from the overload list error)") memberIndex: Int = -1,
     ): AddDocResult {
         val project = currentCoroutineContext().project
         val resolved = resolveFile(project, filePath)
@@ -68,10 +73,38 @@ class DocumentationToolset : McpToolset {
         val isKotlin = readAction { resolved.psiFile is KtFile }
 
         return if (isKotlin) {
-            addKotlinDoc(resolved, documentation, className, memberName)
+            addKotlinDoc(resolved, documentation, className, memberName, memberIndex)
         } else {
-            addJavaDoc(resolved, documentation, className, memberName)
+            addJavaDoc(resolved, documentation, className, memberName, memberIndex)
         }
+    }
+
+    private fun resolveKotlinMember(
+        declarations: List<org.jetbrains.kotlin.psi.KtDeclaration>,
+        memberName: String,
+        memberIndex: Int,
+        context: String,
+    ): PsiElement {
+        val functions = declarations.filter { it is KtNamedFunction && it.name == memberName }
+        val properties = declarations.filter { it is KtProperty && it.name == memberName }
+
+        if (functions.size > 1 && memberIndex < 0) {
+            val overloads = functions.mapIndexed { i, f ->
+                val params = (f as KtNamedFunction).valueParameters.joinToString(", ") { p ->
+                    "${p.name ?: "_"}: ${p.typeReference?.text ?: "Any"}"
+                }
+                "  $i: $memberName($params)"
+            }.joinToString("\n")
+            mcpFail("Multiple overloads found for '$memberName' $context. Specify memberIndex:\n$overloads")
+        }
+
+        if (functions.isNotEmpty()) {
+            return functions[if (memberIndex >= 0) memberIndex.coerceIn(functions.indices) else 0]
+        }
+        if (properties.isNotEmpty()) {
+            return properties[0]
+        }
+        mcpFail("'$memberName' not found $context")
     }
 
     private fun formatAsMarkdownDoc(documentation: String): String {
@@ -92,6 +125,7 @@ class DocumentationToolset : McpToolset {
         documentation: String,
         className: String,
         memberName: String,
+        memberIndex: Int,
     ): AddDocResult {
         val project = resolved.psiFile.project
 
@@ -117,8 +151,18 @@ class DocumentationToolset : McpToolset {
                 val methods = psiClass.findMethodsByName(memberName, false)
                 val field = psiClass.findFieldByName(memberName, false)
 
+                if (methods.size > 1 && memberIndex < 0) {
+                    val overloads = methods.mapIndexed { i, m ->
+                        val params = m.parameterList.parameters.joinToString(", ") { p ->
+                            "${p.type.presentableText} ${p.name}"
+                        }
+                        "  $i: $memberName($params)"
+                    }.joinToString("\n")
+                    mcpFail("Multiple overloads found for '$memberName'. Specify memberIndex:\n$overloads")
+                }
+
                 if (methods.isNotEmpty()) {
-                    val method = methods[0]
+                    val method = methods[if (memberIndex >= 0) memberIndex.coerceIn(methods.indices) else 0]
                     Triple(method as PsiElement, method.name, method.docComment != null)
                 } else if (field != null) {
                     Triple(field as PsiElement, field.name ?: memberName, field.docComment != null)
@@ -164,6 +208,7 @@ class DocumentationToolset : McpToolset {
         documentation: String,
         className: String,
         memberName: String,
+        memberIndex: Int,
     ): AddDocResult {
         val project = resolved.psiFile.project
 
@@ -183,35 +228,30 @@ class DocumentationToolset : McpToolset {
                 } else {
                     val body = ktClass.body
                         ?: mcpFail("Class '${ktClass.name}' has no body")
-                    val member = body.declarations.firstOrNull {
-                        (it is KtNamedFunction && it.name == memberName) ||
-                                (it is KtProperty && it.name == memberName)
-                    } ?: mcpFail("Member '$memberName' not found in class '${ktClass.name}'")
+                    val member = resolveKotlinMember(body.declarations, memberName, memberIndex, "in class '${ktClass.name}'")
                     val existing = PsiTreeUtil.getChildOfType(member, KDoc::class.java)
-                    Triple(member as PsiElement, (member as? KtNamedDeclaration)?.name ?: memberName, existing != null)
+                    Triple(member, (member as? KtNamedDeclaration)?.name ?: memberName, existing != null)
                 }
             } else if (memberName.isNotEmpty()) {
                 // Search top-level declarations first, then fall back to single-class member
-                val topLevel = ktFile.declarations.firstOrNull {
+                val topLevelDecls = ktFile.declarations.filter {
                     (it is KtNamedFunction && it.name == memberName) ||
                             (it is KtProperty && it.name == memberName)
                 }
 
-                if (topLevel != null) {
-                    val existing = PsiTreeUtil.getChildOfType(topLevel, KDoc::class.java)
-                    Triple(topLevel as PsiElement, (topLevel as? KtNamedDeclaration)?.name ?: memberName, existing != null)
+                if (topLevelDecls.isNotEmpty()) {
+                    val member = resolveKotlinMember(ktFile.declarations, memberName, memberIndex, "at top level")
+                    val existing = PsiTreeUtil.getChildOfType(member, KDoc::class.java)
+                    Triple(member, (member as? KtNamedDeclaration)?.name ?: memberName, existing != null)
                 } else {
                     val classes = ktFile.declarations.filterIsInstance<KtClassOrObject>()
                     if (classes.size == 1) {
                         val ktClass = classes[0]
                         val body = ktClass.body
                             ?: mcpFail("Class '${ktClass.name}' has no body")
-                        val member = body.declarations.firstOrNull {
-                            (it is KtNamedFunction && it.name == memberName) ||
-                                    (it is KtProperty && it.name == memberName)
-                        } ?: mcpFail("'$memberName' not found as top-level or in class '${ktClass.name}'")
+                        val member = resolveKotlinMember(body.declarations, memberName, memberIndex, "as top-level or in class '${ktClass.name}'")
                         val existing = PsiTreeUtil.getChildOfType(member, KDoc::class.java)
-                        Triple(member as PsiElement, (member as? KtNamedDeclaration)?.name ?: memberName, existing != null)
+                        Triple(member, (member as? KtNamedDeclaration)?.name ?: memberName, existing != null)
                     } else {
                         mcpFail("'$memberName' not found as a top-level declaration")
                     }
