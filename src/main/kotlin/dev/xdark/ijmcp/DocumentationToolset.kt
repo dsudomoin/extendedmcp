@@ -11,6 +11,7 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiDocCommentOwner
 import com.intellij.psi.PsiElement
@@ -79,6 +80,48 @@ class DocumentationToolset : McpToolset {
         }
     }
 
+    private fun findJavaClassByName(classes: Array<PsiClass>, name: String): PsiClass? {
+        for (cls in classes) {
+            if (cls.name == name) return cls
+            val inner = findJavaClassByName(cls.innerClasses, name)
+            if (inner != null) return inner
+        }
+        return null
+    }
+
+    private fun collectJavaClassNames(classes: Array<PsiClass>): List<String> {
+        val names = mutableListOf<String>()
+        for (cls in classes) {
+            cls.name?.let { names.add(it) }
+            names.addAll(collectJavaClassNames(cls.innerClasses))
+        }
+        return names
+    }
+
+    private fun findKotlinClassByName(declarations: List<org.jetbrains.kotlin.psi.KtDeclaration>, name: String): KtClassOrObject? {
+        for (decl in declarations) {
+            if (decl is KtClassOrObject) {
+                if (decl.name == name) return decl
+                val body = decl.body ?: continue
+                val inner = findKotlinClassByName(body.declarations, name)
+                if (inner != null) return inner
+            }
+        }
+        return null
+    }
+
+    private fun collectKotlinClassNames(declarations: List<org.jetbrains.kotlin.psi.KtDeclaration>): List<String> {
+        val names = mutableListOf<String>()
+        for (decl in declarations) {
+            if (decl is KtClassOrObject) {
+                decl.name?.let { names.add(it) }
+                val body = decl.body ?: continue
+                names.addAll(collectKotlinClassNames(body.declarations))
+            }
+        }
+        return names
+    }
+
     private fun resolveKotlinMember(
         declarations: List<org.jetbrains.kotlin.psi.KtDeclaration>,
         memberName: String,
@@ -136,11 +179,11 @@ class DocumentationToolset : McpToolset {
             if (classes.isEmpty()) mcpFail("No classes found in file")
 
             val psiClass = if (className.isNotEmpty()) {
-                classes.find { it.name == className }
-                    ?: mcpFail("Class '$className' not found. Available: ${classes.mapNotNull { it.name }}")
+                findJavaClassByName(classes, className)
+                    ?: mcpFail("Class '$className' not found. Available: ${collectJavaClassNames(classes)}")
             } else {
                 if (classes.size > 1 && memberName.isEmpty()) {
-                    mcpFail("File has multiple classes: ${classes.mapNotNull { it.name }}. Specify className.")
+                    mcpFail("File has multiple classes: ${collectJavaClassNames(classes)}. Specify className.")
                 }
                 classes[0]
             }
@@ -217,10 +260,9 @@ class DocumentationToolset : McpToolset {
                 ?: mcpFail("File is not a Kotlin file")
 
             if (className.isNotEmpty()) {
-                // Find specific class, optionally find member in it
-                val classes = ktFile.declarations.filterIsInstance<KtClassOrObject>()
-                val ktClass = classes.find { it.name == className }
-                    ?: mcpFail("Class '$className' not found. Available: ${classes.mapNotNull { it.name }}")
+                // Find specific class (including nested), optionally find member in it
+                val ktClass = findKotlinClassByName(ktFile.declarations, className)
+                    ?: mcpFail("Class '$className' not found. Available: ${collectKotlinClassNames(ktFile.declarations)}")
 
                 if (memberName.isEmpty()) {
                     val existing = PsiTreeUtil.getChildOfType(ktClass, KDoc::class.java)
