@@ -34,7 +34,11 @@ class McpMetricsService : PersistentStateComponent<McpMetricsService.State> {
     }
 
     @Synchronized
-    override fun getState(): State = myState
+    override fun getState(): State = State().also {
+        it.calls = HashMap(myState.calls)
+        it.errors = HashMap(myState.errors)
+        it.lastCall = HashMap(myState.lastCall)
+    }
 
     @Synchronized
     override fun loadState(state: State) {
