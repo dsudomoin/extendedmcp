@@ -35,4 +35,18 @@
         <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.AddImportToolset"/>
         <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.DocumentationToolset"/>
     </extensions>
+
+    <applicationListeners>
+        <listener class="dev.xdark.ijmcp.McpMetricsListener"
+                  topic="com.intellij.mcpserver.ToolCallListener"/>
+    </applicationListeners>
+
+    <actions>
+        <action id="dev.xdark.ijmcp.McpMetricsAction"
+                class="dev.xdark.ijmcp.McpMetricsAction"
+                text="MCP Tool Metrics"
+                description="View MCP tool usage statistics">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
 </idea-plugin>
