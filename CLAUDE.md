@@ -27,6 +27,12 @@ src/main/kotlin/dev/xdark/ijmcp/
   AddMemberToolset.kt          — add_method, add_field
   AddImportToolset.kt          — add_import
   DocumentationToolset.kt      — add_documentation, get_documentation
+  ToolFilterToolset.kt         — list_tools_filter
+  FilteredToolsProvider.kt     — McpToolsProvider that replaces built-in, applies filter
+  ToolFilterState.kt           — Persists disabled tool names
+  ToolFilterAction.kt          — Tools menu UI for toggling tools
+  McpMetricsService.kt         — Tool call counting + persistence
+  McpMetricsAction.kt          — Tools menu UI for viewing metrics
 src/main/resources/META-INF/plugin.xml  — Toolset registrations
 mcp-server/                    — Decompiled built-in MCP server sources (reference only)
 ```
@@ -85,6 +91,17 @@ Add to `plugin.xml`:
 - **Write PSI on EDT (direct PSI add/remove)**: `withContext(Dispatchers.EDT) { WriteCommandAction.runWriteCommandAction(project) { ... } }`
 - **Reference resolution**: `psiFile.findReferenceAt(offset)` — NOT `element.references` (doesn't work for Kotlin)
 
+## Tool Filter Architecture
+`FilteredToolsProvider` intercepts the MCP tool list at the `McpToolsProvider` extension point level:
+1. On first `getTools()` call, caches tools from non-toolset providers (built-in tools like `get_file_text_by_path`)
+2. Unregisters ALL other `McpToolsProvider` extensions (including `ReflectionToolsProvider`)
+3. Becomes the sole provider — reads `McpToolset.EP` directly via `asTools()` and applies the filter
+4. `ToolFilterState` persists disabled tool names in `mcpToolFilter.xml`
+5. After toggling, `triggerRefresh()` pokes the EP (deprecated register+unregister of dummy) to cause `getMcpTools()` re-evaluation
+6. MCP server sends `tools/list_changed` notification — clients update automatically
+
+User toggles tools via **Tools > MCP Tool Filter** (checkbox dialog). The `list_tools_filter` MCP tool provides read-only visibility.
+
 ## Gotchas
 
 - **Kotlin Duration ABI**: Don't use `Int.milliseconds` from `kotlin.time` — causes `fromRawValue` errors at runtime due to inline class ABI mismatch between plugin Kotlin and IDE Kotlin. Use `Long` directly (e.g. `withTimeoutOrNull(timeout.toLong())`).
@@ -95,3 +112,4 @@ Add to `plugin.xml`:
 - **Kotlin plugin dependency**: Bundled plugin `org.jetbrains.kotlin` — requires `<supportsKotlinPluginMode supportsK2="true"/>` in plugin.xml.
 - **PsiClassOwner**: `(psiFile as? PsiClassOwner)?.classes` works for both Java and Kotlin files.
 - **Windows path relativization**: `relativizeIfPossible` throws `IllegalArgumentException` when paths are on different drives (e.g. JDK on D:\ vs project on F:\). Always wrap in try-catch.
+- **Sub-packages and kotlinx.serialization**: `@Serializable` data classes in sub-packages (e.g. `dev.xdark.ijmcp.filter`) may fail at runtime with "is not serializable". Keep `@Serializable` classes in the main `dev.xdark.ijmcp` package.
