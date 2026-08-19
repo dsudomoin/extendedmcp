@@ -16,6 +16,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.DocumentUtil
+import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtDeclaration
 
 data class ResolvedFile(
 	val virtualFile: VirtualFile,
@@ -172,3 +174,47 @@ fun detectIndentation(document: Document): String {
 }
 
 private fun gcd(a: Int, b: Int): Int = if (b == 0) a else gcd(b, a % b)
+
+// Recursive: PsiClassOwner.classes only exposes top-level classes, so nested ones
+// are only reachable through innerClasses.
+fun findJavaClassByName(classes: Array<PsiClass>, name: String): PsiClass? {
+	for (cls in classes) {
+		if (cls.name == name) return cls
+		val inner = findJavaClassByName(cls.innerClasses, name)
+		if (inner != null) return inner
+	}
+	return null
+}
+
+fun collectJavaClassNames(classes: Array<PsiClass>): List<String> {
+	val names = mutableListOf<String>()
+	for (cls in classes) {
+		cls.name?.let { names.add(it) }
+		names.addAll(collectJavaClassNames(cls.innerClasses))
+	}
+	return names
+}
+
+fun findKotlinClassByName(declarations: List<KtDeclaration>, name: String): KtClassOrObject? {
+	for (decl in declarations) {
+		if (decl is KtClassOrObject) {
+			if (decl.name == name) return decl
+			val body = decl.body ?: continue
+			val inner = findKotlinClassByName(body.declarations, name)
+			if (inner != null) return inner
+		}
+	}
+	return null
+}
+
+fun collectKotlinClassNames(declarations: List<KtDeclaration>): List<String> {
+	val names = mutableListOf<String>()
+	for (decl in declarations) {
+		if (decl is KtClassOrObject) {
+			decl.name?.let { names.add(it) }
+			val body = decl.body ?: continue
+			names.addAll(collectKotlinClassNames(body.declarations))
+		}
+	}
+	return names
+}

@@ -7,58 +7,75 @@ Registers `McpToolset` implementations via the `com.intellij.mcpServer.mcpToolse
 ## Project Structure
 ```
 src/main/kotlin/dev/xdark/ijmcp/
-  util/PsiUtil.kt              — Shared helpers: resolveFile, formatLocation, findSymbolByName, etc.
+  util/PsiUtil.kt              — resolveFile, formatLocation, findSymbolByName, Java/Kotlin class lookup
   util/FilePatternResolver.kt  — Glob/literal file pattern resolution, PSI batch resolution
   settings/Setting.kt          — Setting<T> delegate, setting() factory, SettingsHolder base
   settings/ConfigurableToolset.kt — Opt-in interface: settingsTitle + settingsHolder
   settings/ToolSettingsService.kt — App-level persistence (ijMcpToolSettings.xml) + SettingCodec
   settings/SettingsUiGenerator.kt — editorFor(): reflective Setting → Swing control by KType
   settings/McpToolSettingsConfigurable.kt — Settings > Tools > MCP Toolset Settings UI
-  GradleSettings.kt            — Gradle settings bean (noisyPatterns) — first ConfigurableToolset consumer
-  FindUsagesToolset.kt         — find_usages
-  QuickFixToolset.kt           — apply_quick_fix
-  ExtendedRefactoringToolset.kt — optimize_imports
-  ImplementationsToolset.kt    — get_implementations
-  TypeInfoToolset.kt           — get_type_info
-  ExtractMethodToolset.kt      — extract_method
-  LibrarySourcesToolset.kt     — check_library_sources
-  GoToDeclarationToolset.kt    — go_to_declaration
-  FileStructureToolset.kt      — get_file_outline
-  FindClassToolset.kt          — find_class
-  GradleToolset.kt             — run_gradle_task
-  GradleSyncToolset.kt         — gradle_sync
-  DownloadSourcesToolset.kt    — download_sources
-  MoveClassToolset.kt          — move_class
-  ChangeSignatureToolset.kt    — change_method_signature
-  SafeDeleteToolset.kt         — safe_delete
-  InlineToolset.kt             — inline_method
-  ListPackageClassesToolset.kt — list_package_classes
-  AddMemberToolset.kt          — add_method, add_field
-  AddImportToolset.kt          — add_imports
-  ReplaceMethodBodyToolset.kt  — replace_method_body
-  DocumentationToolset.kt      — add_documentation, get_documentation, missing_documentation
-  FindInFilesToolset.kt        — find_in_files
-  BatchProblemsToolset.kt      — get_problems_in_files
-  BatchFileTextToolset.kt      — read_files
-  CreateFileToolset.kt         — create_file
-  RenameMemberToolset.kt       — rename_member
-  ShortenReferencesToolset.kt  — shorten_references
-  ReformatToolset.kt           — reformat_files
-  ReplaceLinesToolset.kt       — replace_lines, batch_replace_lines
-  BatchReplaceTextToolset.kt   — batch_replace_text_in_file
-  ToolFilterToolset.kt         — list_tools_filter
-  ToolListService.kt           — App service: enumerates registered tools + built-in tool names (classloader check)
-  ArgNormalizingFilterProvider.kt — McpToolFilterProvider: disables filtered tools + wraps tools for arg normalization
-  ArgNormalizingMcpTool.kt     — McpTool wrapper that runs ArgumentNormalizers before delegating to the real tool
-  ArgumentNormalizer.kt        — fun interface: normalize(args, propertiesSchema)
-  UnknownParameterNormalizer.kt — Fails fast (mcpFail) on unknown parameter names
-  StringEncodedJsonNormalizer.kt — Parses a JSON-string arg into a real array/object when the schema expects one; mcpFails on a string that opens like a container but is malformed
-  SingleElementArrayNormalizer.kt — Wraps a lone value into a single-element array when the schema expects an array and the value validates as one element
-  JsonSchemaValidator.kt       — Minimal recursive validator for the MCP JSON-Schema subset (type/items/properties/required/enum); used by SingleElementArrayNormalizer
-  ToolFilterState.kt           — Persists disabled tool names (mcpToolFilter.xml)
-  ToolFilterAction.kt          — Tools menu UI for toggling tools
-  McpMetricsService.kt         — Tool call counting + persistence
-  McpMetricsAction.kt          — Tools menu UI for viewing metrics
+
+  tools/nav/                   — read-only lookup and navigation
+    FindUsagesToolset.kt         — find_usages
+    FindClassToolset.kt          — find_class
+    FindInFilesToolset.kt        — find_in_files
+    ImplementationsToolset.kt    — get_implementations
+    GoToDeclarationToolset.kt    — go_to_declaration
+    TypeInfoToolset.kt           — get_type_info
+    FileStructureToolset.kt      — get_file_outline
+    ListPackageClassesToolset.kt — list_package_classes
+    LibrarySourcesToolset.kt     — check_library_sources
+
+  tools/refactor/              — PSI-level code modification
+    MoveClassToolset.kt          — move_class
+    RenameMemberToolset.kt       — rename_member
+    SafeDeleteToolset.kt         — safe_delete
+    ChangeSignatureToolset.kt    — change_method_signature
+    InlineToolset.kt             — inline_method
+    ExtractMethodToolset.kt      — extract_method
+    AddMethodToolset.kt          — add_method
+    AddFieldToolset.kt           — add_field
+    AddMemberSupport.kt          — AddMemberResult + findJavaClass/findKotlinClass, shared by the two above
+    AddImportToolset.kt          — add_imports
+    ReplaceMethodBodyToolset.kt  — replace_method_body
+    ExtendedRefactoringToolset.kt — optimize_imports
+    ShortenReferencesToolset.kt  — shorten_references
+    ReformatToolset.kt           — reformat_files
+    QuickFixToolset.kt           — apply_quick_fix
+
+  tools/files/                 — file content read/write
+    BatchFileTextToolset.kt      — read_files
+    BatchProblemsToolset.kt      — get_problems_in_files
+    CreateFileToolset.kt         — create_file
+    ReplaceLinesToolset.kt       — replace_lines
+    BatchReplaceLinesToolset.kt  — batch_replace_lines
+    BatchReplaceTextToolset.kt   — batch_replace_text_in_file
+
+  tools/docs/                  — documentation tools
+    AddDocumentationToolset.kt   — add_documentation
+    GetDocumentationToolset.kt   — get_documentation
+    MissingDocumentationToolset.kt — missing_documentation
+
+  tools/build/                 — Gradle / dependency operations
+    GradleToolset.kt             — run_gradle_task
+    GradleSyncToolset.kt         — gradle_sync
+    DownloadSourcesToolset.kt    — download_sources
+    GradleSettings.kt            — Gradle settings bean (noisyPatterns) — first ConfigurableToolset consumer
+
+  infra/                       — tool filtering, arg normalization, metrics, menu actions
+    ToolFilterToolset.kt         — list_tools_filter
+    ToolListService.kt           — App service: enumerates registered tools + built-in tool names (classloader check)
+    ArgNormalizingFilterProvider.kt — McpToolFilterProvider: disables filtered tools + wraps tools for arg normalization
+    ArgNormalizingMcpTool.kt     — McpTool wrapper that runs ArgumentNormalizers before delegating to the real tool
+    ArgumentNormalizer.kt        — fun interface: normalize(args, propertiesSchema)
+    UnknownParameterNormalizer.kt — Fails fast (mcpFail) on unknown parameter names
+    StringEncodedJsonNormalizer.kt — Parses a JSON-string arg into a real array/object when the schema expects one; mcpFails on a string that opens like a container but is malformed
+    SingleElementArrayNormalizer.kt — Wraps a lone value into a single-element array when the schema expects an array and the value validates as one element
+    JsonSchemaValidator.kt       — Minimal recursive validator for the MCP JSON-Schema subset (type/items/properties/required/enum); used by SingleElementArrayNormalizer
+    ToolFilterState.kt           — Persists disabled tool names (mcpToolFilter.xml)
+    ToolFilterAction.kt          — Tools menu UI for toggling tools
+    McpMetricsService.kt         — Tool call counting + persistence (also declares McpMetricsListener)
+    McpMetricsAction.kt          — Tools menu UI for viewing metrics
 src/main/resources/META-INF/plugin.xml  — Toolset registrations
 ```
 
@@ -100,6 +117,12 @@ class MyToolset : McpToolset {
     }
 }
 ```
+
+### Naming
+- **Tool names stay `snake_case`** (`find_in_files`, `replace_method_body`) — that is the MCP convention and the built-in JetBrains tools use it too.
+- **Parameter names are `camelCase`** (`filePath`, `searchText`, `maxResults`), matching the built-in 2026.2 tools (`directoryPath`, `includeIgnored`). The platform applies no name transformation: the schema exposes the Kotlin parameter name verbatim.
+- The same applies to properties of nested `@Serializable` payload classes (`TextReplacement.oldText`, `Replacement.startLine`), since those become nested schema properties.
+- When a `@McpDescription` mentions a parameter by name, keep it in sync — those strings are the model's only hint about spelling.
 
 ### Registration
 Add to `plugin.xml`:
@@ -145,6 +168,9 @@ class GradleToolset : McpToolset, ConfigurableToolset {
   first read (`SettingsHolder.ensureHydrated`).
 - **Persistence**: `ToolSettingsService` (`@Service(APP)`) stores `"<classFQN>.<name>" -> encoded`
   in `ijMcpToolSettings.xml`, only when a value differs from its default.
+  CAUTION: the key comes from `SettingsHolder.settingsId`, which is `javaClass.name`. Moving or
+  renaming a settings holder class changes the key and silently orphans any persisted value
+  (it falls back to the default). Freeze `settingsId` to a stable string before moving one.
 - **UI**: `McpToolSettingsConfigurable` (Settings > Tools > MCP Toolset Settings) generates the
   form reflectively via `editorFor()`; the toolset and the dialog share the same holder instance,
   so applied edits are visible to subsequent tool calls. No plugin.xml change needed to add a

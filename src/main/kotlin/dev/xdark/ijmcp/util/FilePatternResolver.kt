@@ -55,12 +55,12 @@ suspend fun resolveFilesByPattern(
 	project: Project,
 	pattern: String,
 	extensions: Set<String>? = null,
-	max_files: Int = 500,
+	maxFiles: Int = 500,
 ): FilePatternResult {
 	if (!isGlob(pattern)) {
 		return resolveLiteralPath(project, pattern, extensions)
 	}
-	return resolveGlobPattern(project, pattern, extensions, max_files)
+	return resolveGlobPattern(project, pattern, extensions, maxFiles)
 }
 
 fun isGlob(pattern: String) = pattern.any { it in "*?[{" }
@@ -98,7 +98,7 @@ private suspend fun resolveGlobPattern(
 	project: Project,
 	pattern: String,
 	extensions: Set<String>?,
-	max_files: Int,
+	maxFiles: Int,
 ): FilePatternResult {
 	val matchers = createGlobMatchers(pattern)
 
@@ -120,7 +120,7 @@ private suspend fun resolveGlobPattern(
 					}
 					if (matchers.any { it.matches(Path.of(rel)) }) {
 						result.add(ResolvedFileEntry(rel, vf))
-						if (result.size >= max_files) {
+						if (result.size >= maxFiles) {
 							hitMax = true
 							return@iterateContent false
 						}

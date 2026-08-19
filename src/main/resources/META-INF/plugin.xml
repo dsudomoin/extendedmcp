@@ -15,39 +15,43 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.FindUsagesToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.QuickFixToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ExtendedRefactoringToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ImplementationsToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.TypeInfoToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ExtractMethodToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.LibrarySourcesToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.GoToDeclarationToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.FileStructureToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.FindClassToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.GradleToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.MoveClassToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ChangeSignatureToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.SafeDeleteToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.InlineToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ListPackageClassesToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.AddMemberToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.AddImportToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.DocumentationToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ReplaceMethodBodyToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.FindInFilesToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.BatchProblemsToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.BatchFileTextToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.CreateFileToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.RenameMemberToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.GradleSyncToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ShortenReferencesToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ReformatToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ReplaceLinesToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.DownloadSourcesToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.BatchReplaceTextToolset"/>
-        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.ToolFilterToolset"/>
-        <mcpServer.mcpToolFilterProvider implementation="dev.xdark.ijmcp.ArgNormalizingFilterProvider"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.nav.FindUsagesToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.QuickFixToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.ExtendedRefactoringToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.nav.ImplementationsToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.nav.TypeInfoToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.ExtractMethodToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.nav.LibrarySourcesToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.nav.GoToDeclarationToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.nav.FileStructureToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.nav.FindClassToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.build.GradleToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.MoveClassToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.ChangeSignatureToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.SafeDeleteToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.InlineToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.nav.ListPackageClassesToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.AddMethodToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.AddFieldToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.AddImportToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.docs.AddDocumentationToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.docs.GetDocumentationToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.docs.MissingDocumentationToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.ReplaceMethodBodyToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.nav.FindInFilesToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.files.BatchProblemsToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.files.BatchFileTextToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.files.CreateFileToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.RenameMemberToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.build.GradleSyncToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.ShortenReferencesToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.refactor.ReformatToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.files.ReplaceLinesToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.files.BatchReplaceLinesToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.build.DownloadSourcesToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.tools.files.BatchReplaceTextToolset"/>
+        <mcpServer.mcpToolset implementation="dev.xdark.ijmcp.infra.ToolFilterToolset"/>
+        <mcpServer.mcpToolFilterProvider implementation="dev.xdark.ijmcp.infra.ArgNormalizingFilterProvider"/>
         <applicationConfigurable parentId="tools"
                                  id="dev.xdark.ijmcp.settings"
                                  displayName="MCP Toolset Settings"
@@ -55,19 +59,19 @@
     </extensions>
 
     <applicationListeners>
-        <listener class="dev.xdark.ijmcp.McpMetricsListener"
+        <listener class="dev.xdark.ijmcp.infra.McpMetricsListener"
                   topic="com.intellij.mcpserver.ToolCallListener"/>
     </applicationListeners>
 
     <actions>
-        <action id="dev.xdark.ijmcp.McpMetricsAction"
-                class="dev.xdark.ijmcp.McpMetricsAction"
+        <action id="dev.xdark.ijmcp.infra.McpMetricsAction"
+                class="dev.xdark.ijmcp.infra.McpMetricsAction"
                 text="MCP Tool Metrics"
                 description="View MCP tool usage statistics">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
-        <action id="dev.xdark.ijmcp.ToolFilterAction"
-                class="dev.xdark.ijmcp.ToolFilterAction"
+        <action id="dev.xdark.ijmcp.infra.ToolFilterAction"
+                class="dev.xdark.ijmcp.infra.ToolFilterAction"
                 text="MCP Tool Filter"
                 description="Enable or disable MCP tools">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
