@@ -48,17 +48,17 @@ class FindInFilesToolset : McpToolset {
         |Searches for text or regex patterns across project files using IntelliJ's Find in Files engine.
         |Supports whole words, search context filtering (comments/strings), module scope, and file masks.
         |
-        |Scope priority: directory > moduleName > scope parameter.
+        |Scope priority: directoryPath > moduleName > scope parameter.
         |Search context values: "any" (default), "inComments", "inStrings", "exceptComments", "exceptStrings", "exceptBoth"
     """
 	)
 	suspend fun find_in_files(
 		@McpDescription("Text or regex pattern to search for") searchText: String,
-		@McpDescription("Treat searchText as a regular expression (default false)") isRegex: Boolean = false,
+		@McpDescription("Treat searchText as a regular expression (default false)") regex: Boolean = false,
 		@McpDescription("Case-sensitive search (default false)") caseSensitive: Boolean = false,
 		@McpDescription("Match whole words only (default false)") wholeWords: Boolean = false,
 		@McpDescription("File name filter, e.g. '*.java' or '*.kt,*.java' (default: all files)") fileMask: String = "",
-		@McpDescription("Directory to search in, relative to project root") directory: String = "",
+		@McpDescription("Directory to search in, relative to project root") directoryPath: String = "",
 		@McpDescription("Module name to search within") moduleName: String = "",
 		@McpDescription("Search scope: 'project' (default) or 'all' (includes libraries)") scope: String = "project",
 		@McpDescription("Where to search: 'any', 'inComments', 'inStrings', 'exceptComments', 'exceptStrings', 'exceptBoth'") context: String = "any",
@@ -79,18 +79,18 @@ class FindInFilesToolset : McpToolset {
 		}
 
 		// Resolve directory if specified
-		val resolvedDir = if (directory.isNotEmpty()) {
+		val resolvedDir = if (directoryPath.isNotEmpty()) {
 			val basePath = project.basePath ?: mcpFail("No project base path")
-			val dirPath = Path.of(basePath, directory)
+			val dirPath = Path.of(basePath, directoryPath)
 			if (!Files.isDirectory(dirPath)) {
-				mcpFail("Directory not found: $directory")
+				mcpFail("Directory not found: $directoryPath")
 			}
 			dirPath.toString()
 		} else null
 
 		val findModel = FindModel().apply {
 			stringToFind = searchText
-			isRegularExpressions = isRegex
+			isRegularExpressions = regex
 			isCaseSensitive = caseSensitive
 			isWholeWordsOnly = wholeWords
 			isMultipleFiles = true

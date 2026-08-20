@@ -41,21 +41,21 @@ class GetDocumentationToolset : McpToolset {
         |    Works for any class in the project or libraries.
         |  - filePath + className: for project files, same as add_documentation.
         |
-        |To get docs for the class itself, omit memberName.
-        |To get docs for a method or field, specify memberName.
+        |To get docs for the class itself, omit symbolName.
+        |To get docs for a method or field, specify symbolName.
     """
 	)
 	suspend fun get_documentation(
 		@McpDescription("Fully qualified class name (e.g. java.util.List). Use this OR filePath.") qualifiedClassName: String = "",
 		@McpDescription("Path relative to the project root. Use this OR qualifiedClassName.") filePath: String = "",
 		@McpDescription("Simple name of the target class (only with filePath)") className: String = "",
-		@McpDescription("Name of the method or field (omit to get class docs)") memberName: String = "",
+		@McpDescription("Name of the method or field (omit to get class docs)") symbolName: String = "",
 		@McpDescription("Index of a specific overloaded method") memberIndex: Int = -1,
 	): Any {
 		val project = currentCoroutineContext().project
 
 		val entries = if (qualifiedClassName.isNotEmpty()) {
-			getDocByQualifiedName(project, qualifiedClassName, memberName, memberIndex)
+			getDocByQualifiedName(project, qualifiedClassName, symbolName, memberIndex)
 		} else {
 			if (filePath.isEmpty()) {
 				mcpFail("Provide either qualifiedClassName or filePath")
@@ -63,9 +63,9 @@ class GetDocumentationToolset : McpToolset {
 			val resolved = resolveFile(project, filePath)
 			val isKotlin = resolved.psiFile is KtFile
 			if (isKotlin) {
-				getKotlinDoc(resolved, className, memberName, memberIndex)
+				getKotlinDoc(resolved, className, symbolName, memberIndex)
 			} else {
-				getJavaDoc(resolved, className, memberName, memberIndex)
+				getJavaDoc(resolved, className, symbolName, memberIndex)
 			}
 		}
 
@@ -92,7 +92,7 @@ class GetDocumentationToolset : McpToolset {
 	private suspend fun getDocByQualifiedName(
 		project: Project,
 		qualifiedClassName: String,
-		memberName: String,
+		symbolName: String,
 		memberIndex: Int,
 	): List<DocEntry> {
 		return readAction {
@@ -102,7 +102,7 @@ class GetDocumentationToolset : McpToolset {
 			// Navigate to source if available (compiled classes don't carry doc comments)
 			val psiClass = (compiledClass.navigationElement as? PsiClass) ?: compiledClass
 
-			if (memberName.isEmpty()) {
+			if (symbolName.isEmpty()) {
 				val doc = (psiClass as? PsiDocCommentOwner)?.docComment?.text
 				listOf(
 					DocEntry(
@@ -112,8 +112,8 @@ class GetDocumentationToolset : McpToolset {
 					)
 				)
 			} else {
-				val methods = psiClass.findMethodsByName(memberName, false)
-				val field = psiClass.findFieldByName(memberName, false)
+				val methods = psiClass.findMethodsByName(symbolName, false)
+				val field = psiClass.findFieldByName(symbolName, false)
 
 				if (methods.isNotEmpty()) {
 					val targets = if (memberIndex >= 0) {
@@ -127,19 +127,19 @@ class GetDocumentationToolset : McpToolset {
 						val params = m.parameterList.parameters.joinToString(", ") { p ->
 							"${p.type.presentableText} ${p.name}"
 						}
-						DocEntry(m.name, "$memberName($params)", srcMethod.docComment?.text)
+						DocEntry(m.name, "$symbolName($params)", srcMethod.docComment?.text)
 					}
 				} else if (field != null) {
 					val srcField = (field.navigationElement as? PsiDocCommentOwner) ?: field
 					listOf(
 						DocEntry(
-							field.name ?: memberName,
+							field.name ?: symbolName,
 							field.text.lines().first().trim(),
 							srcField.docComment?.text
 						)
 					)
 				} else {
-					mcpFail("Member '$memberName' not found in class '$qualifiedClassName'")
+					mcpFail("Member '$symbolName' not found in class '$qualifiedClassName'")
 				}
 			}
 		}
@@ -148,7 +148,7 @@ class GetDocumentationToolset : McpToolset {
 	private suspend fun getJavaDoc(
 		resolved: ResolvedFile,
 		className: String,
-		memberName: String,
+		symbolName: String,
 		memberIndex: Int,
 	): List<DocEntry> {
 		return readAction {
@@ -164,12 +164,12 @@ class GetDocumentationToolset : McpToolset {
 				classes[0]
 			}
 
-			if (memberName.isEmpty()) {
+			if (symbolName.isEmpty()) {
 				val doc = psiClass.docComment?.text
 				listOf(DocEntry(psiClass.name ?: "<anonymous>", "class ${psiClass.name}", doc))
 			} else {
-				val methods = psiClass.findMethodsByName(memberName, false)
-				val field = psiClass.findFieldByName(memberName, false)
+				val methods = psiClass.findMethodsByName(symbolName, false)
+				val field = psiClass.findFieldByName(symbolName, false)
 
 				if (methods.isNotEmpty()) {
 					val targets = if (memberIndex >= 0) {
@@ -181,18 +181,18 @@ class GetDocumentationToolset : McpToolset {
 						val params = m.parameterList.parameters.joinToString(", ") { p ->
 							"${p.type.presentableText} ${p.name}"
 						}
-						DocEntry(m.name, "$memberName($params)", m.docComment?.text)
+						DocEntry(m.name, "$symbolName($params)", m.docComment?.text)
 					}
 				} else if (field != null) {
 					listOf(
 						DocEntry(
-							field.name ?: memberName,
+							field.name ?: symbolName,
 							field.text.lines().first().trim(),
 							field.docComment?.text
 						)
 					)
 				} else {
-					mcpFail("Member '$memberName' not found in class '${psiClass.name}'")
+					mcpFail("Member '$symbolName' not found in class '${psiClass.name}'")
 				}
 			}
 		}
@@ -201,7 +201,7 @@ class GetDocumentationToolset : McpToolset {
 	private suspend fun getKotlinDoc(
 		resolved: ResolvedFile,
 		className: String,
-		memberName: String,
+		symbolName: String,
 		memberIndex: Int,
 	): List<DocEntry> {
 		return readAction {
@@ -212,20 +212,20 @@ class GetDocumentationToolset : McpToolset {
 				val ktClass = findKotlinClassByName(ktFile.declarations, className)
 					?: mcpFail("Class '$className' not found. Available: ${collectKotlinClassNames(ktFile.declarations)}")
 
-				if (memberName.isEmpty()) {
+				if (symbolName.isEmpty()) {
 					val doc = PsiTreeUtil.getChildOfType(ktClass, KDoc::class.java)?.text
 					listOf(DocEntry(ktClass.name ?: "<anonymous>", "class ${ktClass.name}", doc))
 				} else {
 					val body = ktClass.body ?: mcpFail("Class '${ktClass.name}' has no body")
-					getKotlinMemberDocs(body.declarations, memberName, memberIndex, "in class '${ktClass.name}'")
+					getKotlinMemberDocs(body.declarations, symbolName, memberIndex, "in class '${ktClass.name}'")
 				}
-			} else if (memberName.isNotEmpty()) {
+			} else if (symbolName.isNotEmpty()) {
 				val topLevel = ktFile.declarations.filter {
-					(it is KtNamedFunction && it.name == memberName) ||
-							(it is KtProperty && it.name == memberName)
+					(it is KtNamedFunction && it.name == symbolName) ||
+							(it is KtProperty && it.name == symbolName)
 				}
 				if (topLevel.isNotEmpty()) {
-					getKotlinMemberDocs(ktFile.declarations, memberName, memberIndex, "at top level")
+					getKotlinMemberDocs(ktFile.declarations, symbolName, memberIndex, "at top level")
 				} else {
 					val classes = ktFile.declarations.filterIsInstance<KtClassOrObject>()
 					if (classes.size == 1) {
@@ -233,17 +233,17 @@ class GetDocumentationToolset : McpToolset {
 						val body = ktClass.body ?: mcpFail("Class '${ktClass.name}' has no body")
 						getKotlinMemberDocs(
 							body.declarations,
-							memberName,
+							symbolName,
 							memberIndex,
 							"as top-level or in class '${ktClass.name}'"
 						)
 					} else {
-						mcpFail("'$memberName' not found as a top-level declaration")
+						mcpFail("'$symbolName' not found as a top-level declaration")
 					}
 				}
 			} else {
 				val classes = ktFile.declarations.filterIsInstance<KtClassOrObject>()
-				if (classes.isEmpty()) mcpFail("No classes found and no memberName specified")
+				if (classes.isEmpty()) mcpFail("No classes found and no symbolName specified")
 				val ktClass = classes[0]
 				val doc = PsiTreeUtil.getChildOfType(ktClass, KDoc::class.java)?.text
 				listOf(DocEntry(ktClass.name ?: "<anonymous>", "class ${ktClass.name}", doc))
@@ -253,12 +253,12 @@ class GetDocumentationToolset : McpToolset {
 
 	private fun getKotlinMemberDocs(
 		declarations: List<KtDeclaration>,
-		memberName: String,
+		symbolName: String,
 		memberIndex: Int,
 		context: String,
 	): List<DocEntry> {
-		val functions = declarations.filter { it is KtNamedFunction && it.name == memberName }
-		val properties = declarations.filter { it is KtProperty && it.name == memberName }
+		val functions = declarations.filter { it is KtNamedFunction && it.name == symbolName }
+		val properties = declarations.filter { it is KtProperty && it.name == symbolName }
 
 		if (functions.isNotEmpty()) {
 			val targets = if (memberIndex >= 0) {
@@ -272,8 +272,8 @@ class GetDocumentationToolset : McpToolset {
 					"${p.name ?: "_"}: ${p.typeReference?.text ?: "Any"}"
 				}
 				DocEntry(
-					func.name ?: memberName,
-					"$memberName($params)",
+					func.name ?: symbolName,
+					"$symbolName($params)",
 					PsiTreeUtil.getChildOfType(f, KDoc::class.java)?.text
 				)
 			}
@@ -282,12 +282,12 @@ class GetDocumentationToolset : McpToolset {
 			val prop = properties[0] as KtProperty
 			return listOf(
 				DocEntry(
-					prop.name ?: memberName,
+					prop.name ?: symbolName,
 					prop.text.lines().first().trim(),
 					PsiTreeUtil.getChildOfType(prop, KDoc::class.java)?.text
 				)
 			)
 		}
-		mcpFail("'$memberName' not found $context")
+		mcpFail("'$symbolName' not found $context")
 	}
 }

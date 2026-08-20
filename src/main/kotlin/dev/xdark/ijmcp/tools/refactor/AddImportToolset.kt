@@ -39,15 +39,15 @@ class AddImportToolset : McpToolset {
 	@McpDescription(
 		"""
         |Adds one or more import statements to a Java or Kotlin file.
-        |Use isStatic=true for Java static imports, isAllUnder=true for wildcard imports (.*).
+        |Use static=true for Java static imports, allUnder=true for wildcard imports (.*).
         |Skips imports that already exist.
     """
 	)
 	suspend fun add_imports(
 		@McpDescription("Path relative to the project root") filePath: String,
 		@McpDescription("Fully qualified names to import") fqNames: List<String>,
-		@McpDescription("For Java: static import (default false)") isStatic: Boolean = false,
-		@McpDescription("Wildcard import .* (default false)") isAllUnder: Boolean = false,
+		@McpDescription("For Java: static import (default false)") static: Boolean = false,
+		@McpDescription("Wildcard import .* (default false)") allUnder: Boolean = false,
 	): Any {
 		val project = currentCoroutineContext().project
 		val resolved = resolveFile(project, filePath)
@@ -56,9 +56,9 @@ class AddImportToolset : McpToolset {
 		val results = fqNames.filter { it.isNotBlank() }.map { fqName ->
 			val trimmed = fqName.trim()
 			if (isKotlin) {
-				addKotlinImport(resolved, trimmed, isAllUnder)
+				addKotlinImport(resolved, trimmed, allUnder)
 			} else {
-				addJavaImport(resolved, trimmed, isStatic)
+				addJavaImport(resolved, trimmed, static)
 			}
 		}
 

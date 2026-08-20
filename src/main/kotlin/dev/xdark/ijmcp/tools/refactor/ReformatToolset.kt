@@ -9,7 +9,7 @@ import com.intellij.mcpserver.annotations.McpTool
 import com.intellij.mcpserver.mcpFail
 import com.intellij.mcpserver.project
 import com.intellij.openapi.application.EDT
-import dev.xdark.ijmcp.util.resolveFilesByPattern
+import dev.xdark.ijmcp.util.resolveFilesByPatterns
 import dev.xdark.ijmcp.util.resolvePsi
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -23,18 +23,18 @@ class ReformatToolset : McpToolset {
 		"""
         |Reformats code in the specified file(s) using IntelliJ's code style settings.
         |
-        |filePath can be a literal path or a glob pattern (e.g. "src/**/*.java").
+        |filePaths accepts a list of file paths or glob patterns (e.g. "src/**/*.java").
         |Glob mode reformats all matching files in the project.
     """
 	)
 	suspend fun reformat_files(
-		@McpDescription("Path relative to project root, or glob pattern (e.g. 'src/**/*.kt')") filePath: String,
+		@McpDescription("List of file paths or glob patterns (e.g. 'src/**/*.kt')") filePaths: List<String>,
 	): Any {
 		val project = currentCoroutineContext().project
-		val psiFiles = resolveFilesByPattern(project, filePath).resolvePsi(project)
+		val psiFiles = resolveFilesByPatterns(project, filePaths).resolvePsi(project)
 
 		if (psiFiles.isEmpty()) {
-			mcpFail("No files match '$filePath'")
+			mcpFail("No files match ${filePaths.joinToString(", ")}")
 		}
 
 		val finished = CompletableDeferred<Unit>()

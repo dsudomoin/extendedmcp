@@ -26,7 +26,7 @@ class CreateFileToolset : McpToolset {
 
 	@Serializable
 	data class FileToCreate(
-		val pathInProject: String,
+		val filePath: String,
 		val content: String,
 	)
 
@@ -38,7 +38,7 @@ class CreateFileToolset : McpToolset {
     """
 	)
 	suspend fun create_file(
-		@McpDescription("List of files to create, each with pathInProject and content")
+		@McpDescription("List of files to create, each with filePath and content")
 		files: List<FileToCreate>,
 		@McpDescription("Whether to overwrite existing files. If false, an error is returned if any file exists.")
 		overwrite: Boolean = false,
@@ -46,7 +46,7 @@ class CreateFileToolset : McpToolset {
 		val project = currentCoroutineContext().project
 		val results = mutableListOf<String>()
 		for (file in files) {
-			val path = project.resolveInProject(file.pathInProject)
+			val path = project.resolveInProject(file.filePath)
 			try {
 				// FileDocumentManager requires EDT, while writeAction {} runs on a background
 				// thread — saveDocument goes after the write command, as in the other toolsets.
@@ -56,18 +56,18 @@ class CreateFileToolset : McpToolset {
 						val parent = VfsUtil.createDirectories(path.parent.pathString)
 						val existing = parent.findChild(path.name)
 						if (existing != null && !overwrite) {
-							mcpFail("File already exists: ${file.pathInProject}. Specify overwrite=true to overwrite it.")
+							mcpFail("File already exists: ${file.filePath}. Specify overwrite=true to overwrite it.")
 						}
 						val createdFile = parent.findOrCreateFile(path.name)
 						document = FileDocumentManager.getInstance().getDocument(createdFile)
-							?: mcpFail("Cannot get document for: ${file.pathInProject}")
+							?: mcpFail("Cannot get document for: ${file.filePath}")
 						document.setText(file.content)
 					}
 					FileDocumentManager.getInstance().saveDocument(document)
 				}
-				results.add("Created ${file.pathInProject}")
+				results.add("Created ${file.filePath}")
 			} catch (e: IOException) {
-				mcpFail("Cannot create file ${file.pathInProject}: ${e.message}")
+				mcpFail("Cannot create file ${file.filePath}: ${e.message}")
 			}
 		}
 		return results.joinToString("\n")

@@ -20,10 +20,8 @@ import com.intellij.openapi.progress.jobToIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.ProperTextRange
 import com.intellij.openapi.util.TextRange
-import com.intellij.openapi.vfs.VirtualFile
 import dev.xdark.ijmcp.util.PsiFileEntry
-import dev.xdark.ijmcp.util.ResolvedFileEntry
-import dev.xdark.ijmcp.util.resolveFilesByPattern
+import dev.xdark.ijmcp.util.resolveFilesByPatterns
 import dev.xdark.ijmcp.util.resolvePsi
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
@@ -64,7 +62,7 @@ class BatchProblemsToolset : McpToolset {
 	): Any {
 		val project = currentCoroutineContext().project
 
-		val entries = resolvePatterns(project, filePaths)
+		val entries = resolveFilesByPatterns(project, filePaths).files
 		if (entries.isEmpty()) {
 			mcpFail("No files matched the given patterns.")
 		}
@@ -112,24 +110,6 @@ class BatchProblemsToolset : McpToolset {
 			}
 		}.trimEnd()
 	}
-
-	private suspend fun resolvePatterns(project: Project, filePaths: List<String>): List<ResolvedFileEntry> {
-		val seen = LinkedHashSet<VirtualFile>()
-		val result = mutableListOf<ResolvedFileEntry>()
-
-		for (token in filePaths) {
-			val pattern = token.trim()
-			if (pattern.isEmpty()) continue
-			val resolved = resolveFilesByPattern(project, pattern)
-			for (entry in resolved.files) {
-				if (seen.add(entry.virtualFile)) {
-					result.add(entry)
-				}
-			}
-		}
-		return result
-	}
-
 
 	private suspend fun analyzeFile(
 		project: Project,

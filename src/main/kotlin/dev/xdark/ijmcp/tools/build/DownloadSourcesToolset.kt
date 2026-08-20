@@ -47,30 +47,30 @@ class DownloadSourcesToolset : McpToolset {
     """
 	)
 	suspend fun download_sources(
-		@McpDescription("Fully qualified class name (e.g. 'com.intellij.openapi.project.Project')") className: String,
+		@McpDescription("Fully qualified class name (e.g. 'com.intellij.openapi.project.Project')") qualifiedClassName: String,
 		@McpDescription("Timeout in milliseconds for download (default 60000)") timeout: Int = 60000,
 	): Any {
 		val project = currentCoroutineContext().project
 
 		val (virtualFile, libraryName) = readAction {
 			val cls = JavaPsiFacade.getInstance(project)
-				.findClass(className, GlobalSearchScope.allScope(project))
-				?: mcpFail("Class not found: $className")
+				.findClass(qualifiedClassName, GlobalSearchScope.allScope(project))
+				?: mcpFail("Class not found: $qualifiedClassName")
 
 			val vf = cls.containingFile?.virtualFile
-				?: mcpFail("No virtual file for class: $className")
+				?: mcpFail("No virtual file for class: $qualifiedClassName")
 
 			val entries = ProjectFileIndex.getInstance(project)
 				.getOrderEntriesForFile(vf)
 				.filterIsInstance<LibraryOrderEntry>()
 
 			if (entries.isEmpty()) {
-				mcpFail("$className is not in a library (might be project source)")
+				mcpFail("$qualifiedClassName is not in a library (might be project source)")
 			}
 
 			val lib = entries.first().library
 			if (lib != null && lib.getFiles(OrderRootType.SOURCES).isNotEmpty()) {
-				mcpFail("Sources already available for ${lib.name ?: className}")
+				mcpFail("Sources already available for ${lib.name ?: qualifiedClassName}")
 			}
 
 			vf to (lib?.name ?: "unknown library")
@@ -78,7 +78,7 @@ class DownloadSourcesToolset : McpToolset {
 
 		val (psiFile, orderEntries) = readAction {
 			val psi = PsiManager.getInstance(project).findFile(virtualFile)
-				?: mcpFail("Cannot get PsiFile for $className")
+				?: mcpFail("Cannot get PsiFile for $qualifiedClassName")
 			val entries = ProjectFileIndex.getInstance(project)
 				.getOrderEntriesForFile(virtualFile)
 				.filterIsInstance<LibraryOrderEntry>()

@@ -63,6 +63,37 @@ suspend fun resolveFilesByPattern(
 	return resolveGlobPattern(project, pattern, extensions, maxFiles)
 }
 
+// maxFiles is a budget across the whole batch, not per pattern.
+suspend fun resolveFilesByPatterns(
+	project: Project,
+	patterns: List<String>,
+	extensions: Set<String>? = null,
+	maxFiles: Int = 500,
+): FilePatternResult {
+	val seen = LinkedHashSet<VirtualFile>()
+	val files = mutableListOf<ResolvedFileEntry>()
+	var hitMax = false
+	var missingPaths = 0
+
+	for (raw in patterns) {
+		val pattern = raw.trim()
+		if (pattern.isEmpty()) continue
+		val remaining = maxFiles - files.size
+		if (remaining <= 0) {
+			hitMax = true
+			break
+		}
+		val resolved = resolveFilesByPattern(project, pattern, extensions, remaining)
+		for (entry in resolved.files) {
+			if (seen.add(entry.virtualFile)) files.add(entry)
+		}
+		missingPaths += resolved.missingPaths
+		if (resolved.hitMax) hitMax = true
+	}
+
+	return FilePatternResult(files, hitMax, missingPaths)
+}
+
 fun isGlob(pattern: String) = pattern.any { it in "*?[{" }
 
 private suspend fun resolveLiteralPath(

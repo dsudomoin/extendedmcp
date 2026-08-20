@@ -15,7 +15,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.util.PsiTreeUtil
 import dev.xdark.ijmcp.util.ResolvedFile
-import dev.xdark.ijmcp.util.resolveFilesByPattern
+import dev.xdark.ijmcp.util.resolveFilesByPatterns
 import dev.xdark.ijmcp.util.resolvePsi
 import kotlinx.coroutines.currentCoroutineContext
 import org.jetbrains.kotlin.kdoc.psi.api.KDoc
@@ -47,16 +47,16 @@ class MissingDocumentationToolset : McpToolset {
         |Returns undocumented elements with kind, name, line number, and signature.
         |By default only non-private elements are reported.
         |
-        |filePath can be a literal path or a glob pattern (e.g. "src/**/*.java").
+        |filePaths accepts a list of file paths or glob patterns (e.g. "src/**/*.java").
         |Files with no undocumented elements are omitted from the results.
     """
 	)
 	suspend fun missing_documentation(
-		@McpDescription("Path relative to the project root, or glob pattern (e.g. 'src/**/*.java')") filePath: String,
+		@McpDescription("List of file paths or glob patterns (e.g. 'src/**/*.java')") filePaths: List<String>,
 		@McpDescription("Include private members (default false)") includePrivate: Boolean = false,
 	): Any {
 		val project = currentCoroutineContext().project
-		val resolved = resolveFilesByPattern(project, filePath, extensions = setOf("java", "kt"))
+		val resolved = resolveFilesByPatterns(project, filePaths, extensions = setOf("java", "kt"))
 
 		if (resolved.files.isEmpty()) {
 			return "No matching files found"

@@ -38,7 +38,7 @@ class ExtractMethodToolset : McpToolset {
 		@McpDescription("Path relative to the project root") filePath: String,
 		@McpDescription("1-based start line of the code to extract") startLine: Int,
 		@McpDescription("1-based end line of the code to extract (inclusive)") endLine: Int,
-		@McpDescription("Name for the new method") methodName: String,
+		@McpDescription("Name for the new method") newName: String,
 	): Any {
 		val project = currentCoroutineContext().project
 		val resolved = resolveFile(project, filePath)
@@ -70,7 +70,7 @@ class ExtractMethodToolset : McpToolset {
 						project, editor, elements,
 						null, // forcedReturnType
 						"Extract Method",
-						methodName,
+						newName,
 						null, // helpId
 					)
 
@@ -90,6 +90,6 @@ class ExtractMethodToolset : McpToolset {
 			FileDocumentManager.getInstance().saveDocument(resolved.document)
 		}
 
-		return "Successfully extracted lines $startLine-$endLine into method '$methodName'"
+		return "Successfully extracted lines $startLine-$endLine into method '$newName'"
 	}
 }

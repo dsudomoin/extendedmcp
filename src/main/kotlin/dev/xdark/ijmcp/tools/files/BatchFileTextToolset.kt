@@ -23,7 +23,7 @@ class BatchFileTextToolset : McpToolset {
         |Drastically reduces MCP round-trips when many files are needed at once.
         |Returns numbered lines (1-indexed, "L<line>: ...") per file.
         |
-        |Each entry in `patterns` is either a project-relative
+        |Each entry in `filePaths` is either a project-relative
         |file path or a standard glob pattern matched against project-relative paths.
         |
         |Glob semantics (consistent with find_files_by_glob):
@@ -40,16 +40,16 @@ class BatchFileTextToolset : McpToolset {
     """
 	)
 	suspend fun read_files(
-		@McpDescription("List of glob patterns or project-relative file paths.")
-		patterns: List<String>,
+		@McpDescription("List of file paths or glob patterns.")
+		filePaths: List<String>,
 		@McpDescription("1-based line number to start reading from in each file. Default 1.")
 		startLine: Int = 1,
 		@McpDescription("Maximum number of lines to return per file. Default 2000.")
 		maxLines: Int = 2000,
 	): Any {
 		val project = currentCoroutineContext().project
-		val tokens = patterns.map { it.trim() }.filter { it.isNotEmpty() }
-		if (tokens.isEmpty()) mcpFail("No patterns provided.")
+		val tokens = filePaths.map { it.trim() }.filter { it.isNotEmpty() }
+		if (tokens.isEmpty()) mcpFail("No file paths provided.")
 		if (startLine <= 0) mcpFail("startLine must be > 0.")
 		if (maxLines <= 0) mcpFail("maxLines must be > 0.")
 

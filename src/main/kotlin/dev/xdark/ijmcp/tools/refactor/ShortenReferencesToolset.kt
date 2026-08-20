@@ -13,7 +13,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.JavaCodeStyleManager
-import dev.xdark.ijmcp.util.resolveFilesByPattern
+import dev.xdark.ijmcp.util.resolveFilesByPatterns
 import dev.xdark.ijmcp.util.resolvePsi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -30,20 +30,20 @@ class ShortenReferencesToolset : McpToolset {
         |Handles name clashes automatically — leaves FQ names where shortening would be ambiguous.
         |Supports both Java and Kotlin files.
         |
-        |filePath can be a literal path or a glob pattern (e.g. "src/**/*.java").
+        |filePaths accepts a list of file paths or glob patterns (e.g. "src/**/*.java").
         |Glob mode processes all matching Java/Kotlin files in the project.
         |
         |Use after editing code with fully qualified names (e.g. via replace_text_in_file).
     """
 	)
 	suspend fun shorten_references(
-		@McpDescription("Path relative to project root, or glob pattern (e.g. 'src/**/*.java')") filePath: String,
+		@McpDescription("List of file paths or glob patterns (e.g. 'src/**/*.java')") filePaths: List<String>,
 	): Any {
 		val project = currentCoroutineContext().project
-		val psiFiles = resolveFilesByPattern(project, filePath, extensions = setOf("java", "kt")).resolvePsi(project)
+		val psiFiles = resolveFilesByPatterns(project, filePaths, extensions = setOf("java", "kt")).resolvePsi(project)
 
 		if (psiFiles.isEmpty()) {
-			return "No Java/Kotlin files match '$filePath'"
+			return "No Java/Kotlin files match ${filePaths.joinToString(", ")}"
 		}
 
 		val textsBefore = readAction {

@@ -30,27 +30,27 @@ class ImplementationsToolset : McpToolset {
         |For a method: returns all overriding methods.
         |
         |Three ways to identify the target:
-        |  1. className — fully qualified name (e.g. "java.util.List"). Works for library/JDK classes.
+        |  1. qualifiedClassName — fully qualified name (e.g. "java.util.List"). Works for library/JDK classes.
         |  2. filePath + symbolName — find symbol by name in a project file.
         |  3. filePath + line + column — find symbol at a specific position.
     """
 	)
 	suspend fun get_implementations(
-		@McpDescription("Path relative to the project root (not needed when using className)") filePath: String = "",
+		@McpDescription("Path relative to the project root (not needed when using qualifiedClassName)") filePath: String = "",
 		@McpDescription("Name of the symbol. Alternative to line+column.") symbolName: String = "",
 		@McpDescription("1-based line number. Used with column as alternative to symbolName.") line: Int = 0,
 		@McpDescription("1-based column number. Used with line.") column: Int = 0,
-		@McpDescription("Fully qualified class name (e.g. 'java.util.List'). Works for library/JDK classes.") className: String = "",
+		@McpDescription("Fully qualified class name (e.g. 'java.util.List'). Works for library/JDK classes.") qualifiedClassName: String = "",
 		@McpDescription("Search scope: 'project' (default) or 'all' (includes libraries)") scope: String = "project",
 	): Any {
 		val project = currentCoroutineContext().project
 
-		val targetElement = if (className.isNotEmpty()) {
+		val targetElement = if (qualifiedClassName.isNotEmpty()) {
 			// Resolve by FQN — works for library/JDK classes
 			readAction {
 				val searchScope = GlobalSearchScope.allScope(project)
-				JavaPsiFacade.getInstance(project).findClass(className, searchScope)
-					?: mcpFail("Class '$className' not found")
+				JavaPsiFacade.getInstance(project).findClass(qualifiedClassName, searchScope)
+					?: mcpFail("Class '$qualifiedClassName' not found")
 			}
 		} else if (filePath.isEmpty() && symbolName.isNotEmpty()) {
 			// No file given — try to find by FQN or short name via JavaPsiFacade
@@ -63,18 +63,18 @@ class ImplementationsToolset : McpToolset {
 				val classes = JavaPsiFacade.getInstance(project)
 					.findClasses(symbolName, searchScope)
 				if (classes.size == 1) classes[0]
-				else if (classes.size > 1) mcpFail("Multiple classes found for '$symbolName'. Use className with fully qualified name, or specify filePath.")
+				else if (classes.size > 1) mcpFail("Multiple classes found for '$symbolName'. Use qualifiedClassName with fully qualified name, or specify filePath.")
 				else {
 					// Try as short name via short names cache
 					val shortNames = PsiShortNamesCache.getInstance(project)
 						.getClassesByName(symbolName, searchScope)
 					if (shortNames.size == 1) shortNames[0]
-					else if (shortNames.size > 1) mcpFail("Multiple classes found for '$symbolName': ${shortNames.mapNotNull { it.qualifiedName }}. Use className with fully qualified name.")
+					else if (shortNames.size > 1) mcpFail("Multiple classes found for '$symbolName': ${shortNames.mapNotNull { it.qualifiedName }}. Use qualifiedClassName with fully qualified name.")
 					else mcpFail("Class '$symbolName' not found. Provide filePath to locate the symbol in a specific file.")
 				}
 			}
 		} else {
-			if (filePath.isEmpty()) mcpFail("Provide filePath, className, or symbolName to identify the target")
+			if (filePath.isEmpty()) mcpFail("Provide filePath, qualifiedClassName, or symbolName to identify the target")
 			val resolved = resolveFile(project, filePath)
 			resolveTargetElement(resolved, symbolName, line, column)
 		}
