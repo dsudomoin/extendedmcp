@@ -75,11 +75,14 @@ class QuickFixToolset : McpToolset {
 			}.values.firstOrNull()
 		}.orEmpty()
 
-		// Collect quick fixes at offset
+		// Collect quick fixes at offset. Passes run in parallel and report infos in a different order on
+		// every call, so sort them: fixIndex must point at the fix the previous listing showed.
 		val fixActions: List<Pair<IntentionAction, HighlightInfo>> = readAction {
 			highlightInfos.filter { info: HighlightInfo ->
 				info.startOffset <= offset && offset <= info.endOffset
-			}.flatMap { info: HighlightInfo ->
+			}.sortedWith(
+				compareBy<HighlightInfo>({ it.startOffset }, { it.endOffset }, { it.description })
+			).flatMap { info: HighlightInfo ->
 				val fixes = mutableListOf<Pair<IntentionAction, HighlightInfo>>()
 				info.findRegisteredQuickFix { descriptor, range ->
 					val action = descriptor.action
